@@ -5,7 +5,7 @@ bl_info = {
     "name": "Star Wars Outlaws Mesh Tool",
     "author": "AlexPo",
     "location": "Scene Properties > Star Wars: Outlaws Mesh Tool Panel",
-    "version": (0, 0, 7),
+    "version": (0, 0, 8),
     "blender": (5, 0, 0),
     "description": "Imports/exports skeletal meshes\n from Star Wars Outlaws's .mmb files",
     "category": "Import-Export"
@@ -775,8 +775,12 @@ class SkeletalMeshAsset(Asset):
             return self.get_vertex_weight_storage_layout()['weight_type']
 
         def parse(self, f):
-            print("Mesh Start Offset:", f.tell())
+            mesh_start_offset = f.tell()
             self.name = br.name(f)
+            print("\n" + "-" * 72)
+            print(f"LOAD MESH START: {self.name}  (mesh_index={self.index})")
+            print("-" * 72)
+            print("Mesh Start Offset:", mesh_start_offset)
             f.seek(48, 1)  # some kind of matrix
             f.seek(1, 1)
             x_count = br.uint16(f)
@@ -898,6 +902,9 @@ class SkeletalMeshAsset(Asset):
                   f'\nWeight Type: {self.vertex_weight_type}'
                   f'\nPhysical Weight Storage Type: {storage_layout["weight_type"]}'
                   f'\nIndex Type: {self.vertex_weight_index_type}')
+            print("-" * 72)
+            print(f"LOAD MESH END: {self.name}")
+            print("-" * 72)
         def write(self, f):
             f.seek(self.lod_count_offset)
             lod_count = br.uint8(f)
@@ -1021,6 +1028,18 @@ class BlenderMeshImporter:
         collection.objects.link(obj)
 
         lod = mesh.lods[lod_index]
+        print("\n" + "=" * 72)
+        print(f"IMPORT START: {mesh.name}_LOD{lod_index}  (mesh_index={mesh.index}, lod_index={lod_index})")
+        print("=" * 72)
+        print(f"Vertex Count: {lod.vertex_count}")
+        print(f"Index Count: {lod.index_count}")
+        print(f"Vertex Stride: {mesh.vertex_stride}")
+        print(f"Normals Stride: {mesh.normals_stride}")
+        print(f"Weight Count: {mesh.weight_count}")
+        storage_layout = mesh.get_vertex_weight_storage_layout()
+        print(f"Physical Weight Storage Count: {storage_layout['count']}")
+        print(f"Physical Weight Storage Type: {storage_layout['weight_type']}")
+        print("=" * 72)
         # Import vertices/faces. Use Mesh.from_pydata for the initial construction
         # because some valid game meshes contain duplicate triangle records and
         # bmesh.faces.new rejects duplicate faces.
@@ -1085,6 +1104,9 @@ class BlenderMeshImporter:
                 else:
                     pass
                     print("Bone index out of MeshBone range : ", bone_index)
+        print("=" * 72)
+        print(f"IMPORT END: {mesh.name}_LOD{lod_index}")
+        print("=" * 72)
         return obj
 
     @staticmethod
