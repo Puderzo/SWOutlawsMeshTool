@@ -1,5 +1,63 @@
 # Changelog
 
+## Version 0.0.12
+
+### Fixed
+
+#### Packed bracer/accessory position layout detection
+
+Some accessory meshes use a packed 32-byte vertex layout containing:
+
+- int16_norm xyz position
+- int16 scale value
+- packed skinning data
+
+Observed layout:
+
+- vertex_stride == 32
+- normals_stride == 12
+- weight_count == 5
+- uv_count == 1
+- color_count == 0
+
+These meshes were previously misclassified as float3 position layouts by the
+stride heuristics.
+
+As a result, imported geometry collapsed into a long line or appeared invisible
+in Blender despite having valid vertex and triangle counts.
+
+The importer now detects this layout explicitly and treats the position stream
+as packed int16_norm + scale position data.
+
+### Tested
+
+The following mesh was used to validate the fix:
+
+- chr_acc_0_gen_bracer_004
+  - left_mesh
+  - right_mesh
+
+Both meshes now import as correctly shaped bracers instead of collapsed
+line geometry.
+
+## Version 0.0.11
+
+### Added
+- Added import handling for de-indexed type-12 head LODs by merging identical vertex positions into shared Blender topology.
+- Added source vertex index tracking for de-indexed imports using the `SWOMT_source_vertex_index` corner attribute.
+- Added safe in-place vertex overwrite support for external type-12 head LOD vertex buffers.
+
+### Changed
+- De-indexed head LODs now import as editable shared topology instead of isolated triangle-corner vertices.
+- Bone weights are remapped correctly after de-indexing/deduplicating imported head LODs.
+- LODs with raw de-indexed vertex counts are labelled more clearly in the UI.
+
+### Fixed
+- Fixed flat-looking shading on de-indexed head LODs caused by every triangle corner being imported as a separate Blender vertex.
+- Fixed broken vertex overwrite for de-indexed external head LODs by writing positions back in original source vertex-buffer order.
+- Fixed unsafe full export behavior for LODs using external `data_y_offset` vertex data by blocking full export and directing users to **Overwrite Vertices**.
+- Fixed bogus custom normal import for meshes with `normals_stride == 0`.
+
 ## 0.0.10
 
 ### Fixed
